@@ -4,6 +4,7 @@ export interface PasswordFormValues {
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
+  resetToken?: string;
 }
 
 export interface PasswordChangeData {
@@ -33,7 +34,6 @@ export const logPasswordChangeAttempt = (
     hasCurrentPassword: !!values.currentPassword,
     hasNewPassword: !!values.newPassword,
     hasConfirmPassword: !!values.confirmPassword,
-    passwordsMatch: values.newPassword === values.confirmPassword,
     hasResetToken: !!resetToken,
     timestamp: new Date().toISOString()
   });

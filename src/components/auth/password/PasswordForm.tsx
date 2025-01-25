@@ -69,7 +69,6 @@ export const PasswordForm = ({
       if (onSubmit) {
         await onSubmit(values);
       } else {
-        // Pass values and resetToken as a single object
         const result = await handlePasswordChange({
           ...values,
           resetToken
