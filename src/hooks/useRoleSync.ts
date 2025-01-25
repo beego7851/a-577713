@@ -38,36 +38,53 @@ export const useRoleSync = () => {
         roles: roles?.map(r => r.role) || []
       };
     },
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 
-  // Mutation to sync roles
+  // Mutation to sync roles with retry logic
   const { mutate: syncRoles } = useMutation({
     mutationFn: async (userId: string) => {
       console.log('Starting role sync mutation for user:', userId);
+      let attempts = 0;
+      const maxAttempts = 3;
 
-      // First, log the role change
-      const { error: auditError } = await supabase.from('audit_logs').insert({
-        user_id: userId,
-        operation: 'update',
-        table_name: 'user_roles',
-        new_values: { sync_initiated: true },
-        severity: 'info'
-      });
+      while (attempts < maxAttempts) {
+        try {
+          // First, log the role change
+          const { error: auditError } = await supabase.from('audit_logs').insert({
+            user_id: userId,
+            operation: 'update',
+            table_name: 'user_roles',
+            new_values: { sync_initiated: true },
+            severity: 'info'
+          });
 
-      if (auditError) {
-        console.error('Error logging role change:', auditError);
+          if (auditError) {
+            console.error('Error logging role change:', auditError);
+          }
+
+          // Then update roles
+          const { error } = await supabase.rpc('perform_user_roles_sync');
+          
+          if (error) {
+            console.error(`Error performing role sync (attempt ${attempts + 1}/${maxAttempts}):`, error);
+            if (attempts === maxAttempts - 1) throw error;
+            attempts++;
+            await new Promise(resolve => setTimeout(resolve, 1000 * (attempts + 1))); // Exponential backoff
+            continue;
+          }
+
+          console.log('Role sync completed successfully');
+          return { success: true };
+        } catch (error) {
+          if (attempts === maxAttempts - 1) throw error;
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempts + 1))); // Exponential backoff
+        }
       }
 
-      // Then update roles
-      const { error } = await supabase.rpc('perform_user_roles_sync');
-      
-      if (error) {
-        console.error('Error performing role sync:', error);
-        throw error;
-      }
-
-      console.log('Role sync completed successfully');
-      return { success: true };
+      throw new Error('Failed to sync roles after multiple attempts');
     },
     meta: {
       onSuccess: () => {
@@ -90,7 +107,7 @@ export const useRoleSync = () => {
         console.error('Role sync error:', error);
         toast({
           title: "Error syncing roles",
-          description: error.message,
+          description: "Failed to sync roles. Please try again later.",
           variant: "destructive",
         });
       }
