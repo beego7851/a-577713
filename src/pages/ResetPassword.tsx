@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, AlertCircle, ArrowLeft, Check } from "lucide-react";
+import { Loader2, AlertCircle, ArrowLeft } from "lucide-react";
 import { PasswordForm } from "@/components/auth/password/PasswordForm";
 import { PasswordRequirements } from "@/components/auth/password/PasswordRequirements";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const MAX_VALIDATION_RETRIES = 3;
 
@@ -17,8 +18,30 @@ const ResetPassword = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [validationAttempts, setValidationAttempts] = useState(0);
   const [isResetting, setIsResetting] = useState(false);
+  const [memberNumber, setMemberNumber] = useState('');
+  const [memberNumberError, setMemberNumberError] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const validateMemberNumber = (value: string) => {
+    const memberNumberRegex = /^[A-Z]{2}\d{5}$/;
+    if (!memberNumberRegex.test(value)) {
+      setMemberNumberError('Member number must be in format XX00000');
+      return false;
+    }
+    setMemberNumberError('');
+    return true;
+  };
+
+  const handleMemberNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase();
+    setMemberNumber(value);
+    if (value) {
+      validateMemberNumber(value);
+    } else {
+      setMemberNumberError('');
+    }
+  };
 
   const validateTokenWithRetry = async (retryCount = 0) => {
     try {
@@ -128,16 +151,35 @@ const ResetPassword = () => {
             Reset Your Password
           </h1>
           <p className="text-dashboard-text">
-            Please enter your new password below
+            Please enter your member number and new password below
           </p>
         </div>
 
         <div className="bg-dashboard-card p-6 rounded-lg border border-dashboard-cardBorder space-y-6">
+          <div className="space-y-2">
+            <label htmlFor="memberNumber" className="block text-sm font-medium text-dashboard-text">
+              Member Number
+            </label>
+            <Input
+              id="memberNumber"
+              type="text"
+              value={memberNumber}
+              onChange={handleMemberNumberChange}
+              placeholder="Enter your member number (e.g., XX00000)"
+              className={`w-full ${memberNumberError ? 'border-red-500' : ''}`}
+              maxLength={7}
+            />
+            {memberNumberError && (
+              <p className="text-sm text-red-500 mt-1">{memberNumberError}</p>
+            )}
+          </div>
+
           <PasswordRequirements />
+          
           <PasswordForm
             onSuccess={handleSuccess}
             onError={handleError}
-            memberNumber=""
+            memberNumber={memberNumber}
             hideCurrentPassword
             resetToken={token}
             isSubmitting={isResetting}
