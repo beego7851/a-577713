@@ -72,7 +72,6 @@ export type DatabaseFunctions = {
     Args: Record<PropertyKey, never>;
     Returns: undefined;
   };
-
   handle_failed_login: {
     Args: { member_number: string };
     Returns: {
@@ -82,12 +81,10 @@ export type DatabaseFunctions = {
       lockout_duration: string;
     };
   };
-  
   validate_reset_token: {
     Args: { token_value: string };
     Returns: boolean;
   };
-
   validate_user_roles: {
     Args: Record<PropertyKey, never>;
     Returns: {
@@ -96,7 +93,6 @@ export type DatabaseFunctions = {
       details: Json;
     }[];
   };
-
   handle_password_reset: {
     Args: {
       member_number: string;
@@ -109,7 +105,6 @@ export type DatabaseFunctions = {
     };
     Returns: Json;
   };
-
   handle_password_reset_with_token: {
     Args: {
       token_value: string;
