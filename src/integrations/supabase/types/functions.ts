@@ -96,4 +96,15 @@ export type DatabaseFunctions = {
       details: Json;
     }[];
   };
+
+  handle_password_reset_with_token: {
+    Args: {
+      token_value: string;
+      new_password: string;
+      ip_address?: string | null;
+      user_agent?: string | null;
+      client_info?: Json | null;
+    };
+    Returns: Json;
+  };
 };
