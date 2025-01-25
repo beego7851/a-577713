@@ -28,8 +28,11 @@ interface PasswordFormProps {
   memberNumber: string;
   onCancel?: () => void;
   onSuccess?: () => void;
+  onError?: (error: any) => void;
   hideCurrentPassword?: boolean;
   resetToken?: string;
+  isSubmitting?: boolean;
+  setIsSubmitting?: (value: boolean) => void;
 }
 
 export const PasswordForm = ({
@@ -37,8 +40,11 @@ export const PasswordForm = ({
   memberNumber,
   onCancel,
   onSuccess,
+  onError,
   hideCurrentPassword = false,
-  resetToken
+  resetToken,
+  isSubmitting: externalIsSubmitting,
+  setIsSubmitting: externalSetIsSubmitting
 }: PasswordFormProps) => {
   const form = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
@@ -50,11 +56,16 @@ export const PasswordForm = ({
     mode: "onChange",
   });
 
-  const { isSubmitting, handlePasswordChange } = usePasswordChange(memberNumber, onSuccess);
+  const { isSubmitting: internalIsSubmitting, handlePasswordChange } = usePasswordChange(memberNumber, onSuccess, onError);
+  
+  const isSubmitting = externalIsSubmitting ?? internalIsSubmitting;
+  const setIsSubmitting = externalSetIsSubmitting ?? (() => {});
 
   const handleFormSubmit = async (values: PasswordFormValues) => {
     try {
+      setIsSubmitting(true);
       console.log("[PasswordForm] Submitting form with token:", !!resetToken);
+      
       if (onSubmit) {
         await onSubmit(values);
       } else {
@@ -69,6 +80,11 @@ export const PasswordForm = ({
       }
     } catch (error) {
       console.error("[PasswordForm] Submit error:", error);
+      if (onError) {
+        onError(error);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -115,15 +131,20 @@ export const PasswordForm = ({
           )}
           <Button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !form.formState.isValid}
             className="bg-[#9b87f5] text-white hover:bg-[#7E69AB] transition-all duration-200 flex items-center gap-2"
           >
             {isSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Resetting...
+              </>
             ) : (
-              <Lock className="w-4 h-4" />
+              <>
+                <Lock className="w-4 h-4" />
+                Reset Password
+              </>
             )}
-            {isSubmitting ? "Changing..." : "Change Password"}
           </Button>
         </div>
       </form>
