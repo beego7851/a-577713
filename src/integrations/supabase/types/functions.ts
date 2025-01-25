@@ -105,6 +105,7 @@ export type DatabaseFunctions = {
     };
     Returns: Json;
   };
+
   handle_password_reset_with_token: {
     Args: {
       token_value: string;
