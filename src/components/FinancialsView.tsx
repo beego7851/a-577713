@@ -32,9 +32,9 @@ const FinancialsView = () => {
         </DashboardTabsContent>
 
         <DashboardTabsContent value="payments" className="mt-6">
+          <AllPaymentsTable />
           <PaymentSearch />
           <PaymentTrackingSection />
-          <AllPaymentsTable />
         </DashboardTabsContent>
 
         <DashboardTabsContent value="stats" className="mt-6">
