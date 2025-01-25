@@ -56,7 +56,7 @@ export const PasswordForm = ({
     mode: "onChange",
   });
 
-  const { isSubmitting: internalIsSubmitting, handlePasswordChange } = usePasswordChange(memberNumber, onSuccess, onError);
+  const { isSubmitting: internalIsSubmitting, handlePasswordChange } = usePasswordChange(memberNumber, onSuccess);
   
   const isSubmitting = externalIsSubmitting ?? internalIsSubmitting;
   const setIsSubmitting = externalSetIsSubmitting ?? (() => {});
