@@ -30,7 +30,7 @@ export const usePasswordChange = (memberNumber: string, onSuccess?: () => void) 
     );
   };
 
-  const handlePasswordChange = async (values: PasswordFormValues, retryCount = 0): Promise<PasswordChangeData | null> => {
+  const handlePasswordChange = async (values: PasswordFormValues, resetToken?: string, retryCount = 0): Promise<PasswordChangeData | null> => {
     if (retryCount >= MAX_RETRIES) {
       console.error("[PasswordChange] Maximum retry attempts reached");
       toast.error("Maximum retry attempts reached. Please try again later.");
@@ -43,24 +43,37 @@ export const usePasswordChange = (memberNumber: string, onSuccess?: () => void) 
     try {
       // Log the attempt with sanitized data (excluding actual password)
       console.log("[PasswordChange] Starting password change for member:", memberNumber, {
+        hasResetToken: !!resetToken,
         timestamp: new Date().toISOString(),
         retryCount,
         userAgent: navigator.userAgent,
         platform: navigator.platform
       });
 
-      const { data: rpcData, error } = await supabase.rpc('handle_password_reset', {
-        member_number: memberNumber,
-        new_password: values.newPassword,
-        current_password: values.currentPassword,
-        ip_address: null,
-        user_agent: navigator.userAgent,
-        client_info: {
-          timestamp: new Date().toISOString(),
-          browser: navigator.userAgent,
-          platform: navigator.platform
-        }
-      });
+      const { data: rpcData, error } = resetToken 
+        ? await supabase.rpc('handle_password_reset_with_token', {
+            token_value: resetToken,
+            new_password: values.newPassword,
+            ip_address: null,
+            user_agent: navigator.userAgent,
+            client_info: {
+              timestamp: new Date().toISOString(),
+              browser: navigator.userAgent,
+              platform: navigator.platform
+            }
+          })
+        : await supabase.rpc('handle_password_reset', {
+            member_number: memberNumber,
+            new_password: values.newPassword,
+            current_password: values.currentPassword,
+            ip_address: null,
+            user_agent: navigator.userAgent,
+            client_info: {
+              timestamp: new Date().toISOString(),
+              browser: navigator.userAgent,
+              platform: navigator.platform
+            }
+          });
 
       console.log("[PasswordChange] RPC Response received:", {
         hasData: !!rpcData,
@@ -95,7 +108,7 @@ export const usePasswordChange = (memberNumber: string, onSuccess?: () => void) 
         
         if (error.code === 'PGRST301' && retryCount < MAX_RETRIES) {
           console.log("[PasswordChange] Retrying due to PGRST301 error");
-          return handlePasswordChange(values, retryCount + 1);
+          return handlePasswordChange(values, resetToken, retryCount + 1);
         } else {
           toast.error(error.message || "Failed to change password");
         }
@@ -124,6 +137,11 @@ export const usePasswordChange = (memberNumber: string, onSuccess?: () => void) 
       if (onSuccess) {
         console.log("[PasswordChange] Calling onSuccess callback");
         onSuccess();
+      }
+
+      if (resetToken) {
+        console.log("[PasswordChange] Redirecting to login after token-based reset");
+        navigate('/login');
       }
 
       return typedRpcData;

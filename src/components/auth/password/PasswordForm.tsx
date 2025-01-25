@@ -10,7 +10,7 @@ import { usePasswordChange } from "./usePasswordChange";
 import { PasswordFormValues } from "./types";
 
 const passwordSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
+  currentPassword: z.string().optional(),
   newPassword: z.string()
     .min(8, "Password must be at least 8 characters")
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
@@ -29,6 +29,7 @@ interface PasswordFormProps {
   onCancel?: () => void;
   onSuccess?: () => void;
   hideCurrentPassword?: boolean;
+  resetToken?: string;
 }
 
 export const PasswordForm = ({
@@ -37,6 +38,7 @@ export const PasswordForm = ({
   onCancel,
   onSuccess,
   hideCurrentPassword = false,
+  resetToken
 }: PasswordFormProps) => {
   const form = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
@@ -52,11 +54,11 @@ export const PasswordForm = ({
 
   const handleFormSubmit = async (values: PasswordFormValues) => {
     try {
-      console.log("[PasswordForm] Submitting form...");
+      console.log("[PasswordForm] Submitting form with token:", !!resetToken);
       if (onSubmit) {
         await onSubmit(values);
       } else {
-        const result = await handlePasswordChange(values);
+        const result = await handlePasswordChange(values, resetToken);
         if (result && result.success) {
           console.log("[PasswordForm] Password change successful");
           form.reset();

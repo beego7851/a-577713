@@ -24,13 +24,20 @@ const ResetPassword = () => {
       }
 
       try {
+        console.log("[ResetPassword] Validating token");
         const { data, error } = await supabase
           .rpc('validate_reset_token', { token_value: token });
 
         if (error) throw error;
+        
+        console.log("[ResetPassword] Token validation result:", {
+          isValid: !!data,
+          timestamp: new Date().toISOString()
+        });
+        
         setIsValidToken(!!data);
       } catch (error: any) {
-        console.error('Token validation error:', error);
+        console.error('[ResetPassword] Token validation error:', error);
         setIsValidToken(false);
         toast({
           title: "Invalid Reset Link",
@@ -46,6 +53,7 @@ const ResetPassword = () => {
   }, [token, toast]);
 
   const handleSuccess = () => {
+    console.log("[ResetPassword] Password reset successful");
     toast({
       title: "Password Reset Successful",
       description: "Your password has been successfully reset. Please login with your new password.",
@@ -94,6 +102,7 @@ const ResetPassword = () => {
             onSuccess={handleSuccess}
             memberNumber=""
             hideCurrentPassword
+            resetToken={token}
           />
         </div>
       </div>
