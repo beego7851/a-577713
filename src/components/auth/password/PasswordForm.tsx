@@ -69,7 +69,12 @@ export const PasswordForm = ({
       if (onSubmit) {
         await onSubmit(values);
       } else {
-        const result = await handlePasswordChange(values, resetToken);
+        // Pass values and resetToken as a single object
+        const result = await handlePasswordChange({
+          ...values,
+          resetToken
+        });
+        
         if (result && result.success) {
           console.log("[PasswordForm] Password change successful");
           form.reset();
